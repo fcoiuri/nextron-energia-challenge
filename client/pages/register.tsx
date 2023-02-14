@@ -1,49 +1,41 @@
-import React, { useState } from 'react'
-import { useRouter } from 'next/router';
-import { apiNextURl } from '../api'
+import React from "react";
+import { useRouter } from "next/router";
+import { DataContext } from "../contexts";
 
 export default function Register() {
   const router = useRouter();
-  const [state, setState] = useState<any>({
-    email: '',
-    password: '',
-    name: '',
-    isSubmitting: false,
-    message: '',
-    errors: null,
-  })
+  const { state, fetchRegister } = React.useContext(DataContext);
+  const [emailValue, setEmailValue] = React.useState("");
+  const [passwordValue, setPasswordValue] = React.useState("");
+  const [nameValue, setNameValue] = React.useState("");
+  const { register, loading, error } = state;
 
-  const { email, password, name, message, isSubmitting, errors } = state
+  const handleEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmailValue(e.target.value);
+  };
 
-  const handleChange = async (e: any) => {
-    await setState({ ...state, [e.target.name]: e.target.value })
-  }
+  const handlePassword = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPasswordValue(e.target.value);
+  };
+
+  const handleName = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNameValue(e.target.value);
+  };
+
+  React.useEffect(() => {
+    if (register.success!) {
+      router.push("/login");
+    }
+  }, [register.success!]);
 
   const handleSubmit = async () => {
-    setState({ ...state, isSubmitting: true })
+    fetchRegister(emailValue, passwordValue, nameValue);
+  };
 
-    const { email, password, name } = state
-    try {
-      const res = await fetch(`${apiNextURl}/register`, {
-        method: 'POST',
-        body: JSON.stringify({
-          email,
-          password,
-          name,
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      }).then(res => res.json())
-      const { success, msg, errors } = res
-
-      if (!success) {
-        return setState({ ...state, message: msg, errors, isSubmitting: false })
-      }
-
-      router.push('/login')
-    } catch (e: any) {
-      setState({ ...state, message: e.toString(), isSubmitting: false })
-    }
-  }
+  const handleSign = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    router.push("/login");
+  };
 
   return (
     <div className="wrapper">
@@ -52,43 +44,36 @@ export default function Register() {
         className="input"
         type="name"
         placeholder="Name"
-        value={name}
+        value={nameValue}
         name="name"
-        onChange={e => {
-          handleChange(e)
-        }}
+        onChange={handleName}
       />
       <input
         className="input"
         type="text"
         placeholder="Email"
-        value={email}
+        value={emailValue}
         name="email"
-        onChange={e => {
-          handleChange(e)
-        }}
+        onChange={handleEmail}
       />
       <input
         className="input"
         type="password"
         placeholder="Password"
-        value={password}
+        value={passwordValue}
         name="password"
-        onChange={e => {
-          handleChange(e)
-        }}
+        onChange={handlePassword}
       />
 
-      <button disabled={isSubmitting} onClick={() => handleSubmit()}>
-        {isSubmitting ? '.....' : 'Sign Up'}
+      <button type="submit" disabled={loading} onClick={() => handleSubmit()}>
+        {loading ? "....." : "Sign Up"}
       </button>
-      <div className="message">{message && <p>&bull; {message}</p>}</div>
-      <div>
-        {errors &&
-          errors.map((error: any, id: string) => {
-            return <p key={id}> &bull; {error}</p>
-          })}
+      <div className="message">{error && <p>&bull; {error}</p>}</div>
+      <div className="sign">
+        <a href="/login" onClick={() => handleSign}>
+          Have an account? Login now!
+        </a>
       </div>
     </div>
-  )
+  );
 }

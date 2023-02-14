@@ -1,87 +1,72 @@
-import React, { useState } from 'react'
-import { useRouter } from 'next/router'
-import { apiNextURl } from '../api'
-import { createCookie } from '../utils'
+import React from "react";
+import { useRouter } from "next/router";
+import { createCookie } from "../utils";
+import { DataContext } from "../contexts";
 
 export default function Login() {
   const router = useRouter();
-  const [state, setState] = useState({
-    email: '',
-    password: '',
-    isSubmitting: false,
-    message: '',
-  })
+  const { state, fetchLogin } = React.useContext(DataContext);
+  const [emailValue, setEmailValue] = React.useState("");
+  const [passwordValue, setPasswordValue] = React.useState("");
+  const { login, loading, error } = state;
 
-  const { email, password, isSubmitting, message } = state
+  const handleEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmailValue(e.target.value);
+  };
 
-  const handleChange = async (e: any) => {
-    const { name, value } = e.target
-    await setState({ ...state, [name]: value })
-  }
+  const handlePassword = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPasswordValue(e.target.value);
+  };
+
+  React.useEffect(() => {
+    if (login.success!) {
+      (window as any).token = login.token!;
+      createCookie("token", login.token!, 0.5);
+      router.push({ pathname: "/session" });
+    }
+  }, [login.success!]);
 
   const handleSubmit = async () => {
-    setState({ ...state, isSubmitting: true })
+    fetchLogin(emailValue, passwordValue);
+  };
 
-    const { email, password } = state
-    try {
-      const res = await fetch(`${apiNextURl}/login`, {
-        method: 'POST',
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }).then(res => res.json())
-
-      const { token, success, msg, user } = res
-
-      if (!success) {
-        return setState({
-          ...state,
-          message: msg,
-          isSubmitting: false,
-        })
-      }
-      // expire in 30 minutes(same time as the cookie is invalidated on the backend)
-      createCookie('token', token, 0.5)
-
-      router.push({ pathname: '/session' })
-    } catch (e: any) {
-      setState({ ...state, message: e.toString(), isSubmitting: false })
-    }
-  }
+  const handleSign = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    router.push("/register");
+  };
 
   return (
-    <div className="wrapper">
-      <h1>Login</h1>
-      <input
-        className="input"
-        type="text"
-        placeholder="email"
-        value={email}
-        name="email"
-        onChange={e => {
-          handleChange(e)
-        }}
-      />
+    <React.Fragment>
+      <div className="wrapper">
+        <h1>Login</h1>
+        <input
+          className="input"
+          type="text"
+          placeholder="email"
+          value={emailValue}
+          name="email"
+          onChange={handleEmail}
+        />
 
-      <input
-        className="input"
-        type="password"
-        placeholder="password"
-        value={password}
-        name="password"
-        onChange={e => {
-          handleChange(e)
-        }}
-      />
+        <input
+          className="input"
+          type="password"
+          placeholder="password"
+          value={passwordValue}
+          name="password"
+          onChange={handlePassword}
+        />
 
-      <button disabled={isSubmitting} onClick={() => handleSubmit()}>
-        {isSubmitting ? '.....' : 'login'}
-      </button>
-      <div className="message">{message}</div>
-    </div>
-  )
+        <button type="submit" disabled={loading} onClick={() => handleSubmit()}>
+          {loading ? "....." : "login"}
+        </button>
+        <div className="message">{error}</div>
+        <div className="sign">
+          <a href="/register" onClick={() => handleSign}>
+            Don't have an account? Register now!
+          </a>
+        </div>
+      </div>
+    </React.Fragment>
+  );
 }
