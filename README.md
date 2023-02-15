@@ -44,6 +44,7 @@ Navigate to the server directory
 
 ```bash
 > cd server
+> cd cmd
 > go run main.go
 ```
 
